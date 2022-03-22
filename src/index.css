@@ -1,6 +1,35 @@
 body {
   margin: 0;
 }
+input {
+  padding: 1em;
+  min-width: 200px;
+  border-radius: 4px;
+  border: 1px solid #5e5e5e;
+  outline: none;
+  margin: 1em;
+}
+input:disabled {
+  border: 1px solid #eee;
+}
+img {
+  width: 24px;
+  height: 24px;
+}
+ul {
+  padding: 0;
+}
+li {
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid #eee;
+  padding: 1em;
+  margin: 0.5em;
+}
+button {
+  border: 0;
+  border-radius: 4px;
+}
 .user-info-container {
   position: relative;
   width: 100vw;
@@ -21,10 +50,17 @@ body {
 }
 #infowindow-button {
   background-color: #24a0ed;
-  border: 0;
   padding: 0.5em;
   color: white;
-  border-radius: 4px;
   box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
   cursor: pointer;
+}
+.save-button {
+  background-color: #24a0ed;
+  padding: 1em;
+  color: white;
+  box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+  cursor: pointer;
+  margin: 1em;
+  width: 200px;
 }

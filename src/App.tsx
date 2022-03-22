@@ -1,76 +1,117 @@
-import axios from "axios"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { setAddressList, selectedAddress } from "../redux/maps"
+import { setUserInfo, getUserInfoFromLocalstorage } from "../redux/maps"
+import { RootState } from "../redux/store"
 import Map from "./components/Map"
 
 function App() {
   const dispatch = useDispatch()
-  const [userDeliveryData, setUserDeliveryData] = useState({})
-  const [location, setLocation] = useState({ lat: 0, lng: 0 })
-  const [address, setAddress] = useState("전북 삼성동 100")
-  const handleInputChange = (e) => {
+  const { userInfo } = useSelector((state: RootState) => state.maps)
+  const [isMapOpen, setIsMapOpen] = useState<boolean>(false)
+  const [isStoredUserInfo, setIsStoredUserInfo] = useState<{
+    [key: string]: boolean
+  }>({
+    nickName: false,
+    address: false,
+    addressDetail: false,
+    deliveryMessage: false,
+  })
+  const setLocalStorage = () => {
+    localStorage.setItem("userInfo", JSON.stringify(userInfo))
+    alert("배송 관련 정보가 저장되었습니다.")
+  }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setUserDeliveryData({
-      ...userDeliveryData,
-      [name]: value,
-    })
+    dispatch(setUserInfo({ [name]: value }))
   }
-  const request = async () => {
-    const response = await axios.get(
-      "https://dapi.kakao.com/v2/local/search/address.json",
-      {
-        params: { query: address },
-
-        headers: {
-          Authorization: `KakaoAK ${import.meta.env.VITE_REST_API_KEY}`,
-        },
+  const enableInputChange = (property: string) => {
+    setIsStoredUserInfo((state) => ({ ...state, [property]: false }))
+  }
+  useEffect(() => {
+    const userInfo = localStorage.getItem("userInfo")
+    if (userInfo) {
+      const storedUserInfo = JSON.parse(userInfo)
+      dispatch(getUserInfoFromLocalstorage(storedUserInfo))
+      for (const detail in storedUserInfo) {
+        isStoredUserInfo[detail] = storedUserInfo[detail].length > 0
       }
-    )
-    // 주소 리스트를 보여주고 그 리스트 중에서 클릭하면 하단 맵을 실행시켜서 보여주는거구나...
-    if (response.status === 200) {
-      dispatch(setAddressList(response.data.documents))
-      // geocoder.addressSearch(address, (res, status) => {
-      //   console.log(res)
-      //   if (status === kakao.maps.services.Status.OK) {
-      //     showDetailAddrFromCoords(res, null)
-      //   }
-      // })
+      setIsStoredUserInfo(isStoredUserInfo)
     }
-  }
-
+  }, [])
   return (
-    <>
-      <div className="user-info-container" onChange={handleInputChange}>
-        별칭:
-        <input type="text" name="nickName" />
-        <br />
-        주소:
-        {/* 주소 입력받을 때 주소를 유저에게 보여주며 입력받음 맞는 주소 선택시
-      지도에 해당 좌표를 찍고 확인
-      지도에서 해당 좌표의 주소를 유저에게 보여주면서 입력받는다는건 지도에서 선택하면 주소를 보여준다는 의미인듯
-    */}
-        <input type="text" name="address" />
-        <br />
-        상세주소:
-        <input
-          // onChange={(e) => setAddress(e.target.value)}
-          type="text"
-          name="addressDetail"
+    <div className="user-info-container">
+      <input
+        onChange={handleInputChange}
+        placeholder="주소의 별칭을 정해주세요."
+        type="text"
+        name="nickName"
+        disabled={isStoredUserInfo.nickName}
+        defaultValue={userInfo.nickName}
+      />
+      {isStoredUserInfo.nickName && (
+        <img
+          onClick={() => enableInputChange("nickName")}
+          src="https://images.velog.io/images/seonja/post/dfc66b52-25ef-49c6-af1f-e9f78759c0a7/image.png"
+          alt="edit"
         />
-        <br />
-        배송시 유의사항:
-        <input type="text" name="deliveryMessage" />
-        <br />
-        {/* 저장을 누르면 local storage에 저장하도록 편집은?
-      이미 데이터가 있으면 input 창은 disabled되고 연필 svg가 나타남
-      연필 svg를 누르면 해당 svg는 사라지고 disabled는 false로 바뀜
-      저장은 하단의 저장버튼을 동일하게 누름
-    */}
-        <button onClick={request}>저장</button>
-        <Map />
-      </div>
-    </>
+      )}
+      <br />
+      <input
+        placeholder="주소"
+        onClick={() => setIsMapOpen(true)}
+        disabled={isStoredUserInfo.address}
+        defaultValue={userInfo.address}
+        type="text"
+        name="address"
+      />
+      {isStoredUserInfo.address && (
+        <img
+          onClick={() => enableInputChange("address")}
+          src="https://images.velog.io/images/seonja/post/dfc66b52-25ef-49c6-af1f-e9f78759c0a7/image.png"
+          alt="edit"
+        />
+      )}
+
+      <br />
+      <input
+        onChange={handleInputChange}
+        placeholder="상세주소"
+        type="text"
+        name="addressDetail"
+        disabled={isStoredUserInfo.addressDetail}
+        defaultValue={userInfo.addressDetail}
+      />
+      {isStoredUserInfo.addressDetail && (
+        <img
+          onClick={() => enableInputChange("addressDetail")}
+          src="https://images.velog.io/images/seonja/post/dfc66b52-25ef-49c6-af1f-e9f78759c0a7/image.png"
+          alt="edit"
+        />
+      )}
+
+      <br />
+      <input
+        onChange={handleInputChange}
+        placeholder="배송시 유의사항"
+        type="text"
+        name="deliveryMessage"
+        disabled={isStoredUserInfo.deliveryMessage}
+        defaultValue={userInfo.deliveryMessage}
+      />
+      {isStoredUserInfo.deliveryMessage && (
+        <img
+          onClick={() => enableInputChange("deliveryMessage")}
+          src="https://images.velog.io/images/seonja/post/dfc66b52-25ef-49c6-af1f-e9f78759c0a7/image.png"
+          alt="edit"
+        />
+      )}
+
+      <br />
+      <button className="save-button" onClick={setLocalStorage}>
+        저장
+      </button>
+      {isMapOpen && <Map setIsMapOpen={setIsMapOpen} />}
+    </div>
   )
 }
 

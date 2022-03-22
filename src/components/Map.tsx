@@ -1,46 +1,38 @@
-import { useEffect, useRef, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { selectedAddress, setAddressList } from "../../redux/maps"
 import axios from "axios"
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { setUserInfo, setAddressList } from "../../redux/maps"
+import { RootState } from "../../redux/store"
+
+declare global {
+  interface Window {
+    kakao: any
+  }
+}
+type MapProps = {
+  setIsMapOpen: Dispatch<SetStateAction<boolean>>
+}
 
 const marker = new window.kakao.maps.Marker()
 const infowindow = new window.kakao.maps.InfoWindow({ zindex: 1 })
-const Map = () => {
-  const { addresss, addressList } = useSelector((state) => state.maps)
+const Map = ({ setIsMapOpen }: MapProps) => {
+  const { addressList } = useSelector((state: RootState) => state.maps)
   const dispatch = useDispatch()
   const [location, setLocation] = useState({ lat: 0, lng: 0 })
-  const [address, setAddress] = useState("전북 삼성동 100")
+  const [address, setAddress] = useState("")
+  const [selectedAddress, setSelectedAddress] = useState("")
   const { kakao } = window
-  const container = useRef()
-  const map = useRef()
+  const container = useRef<HTMLDivElement>(null)
+  const map = useRef<any>()
 
   const geocoder = new kakao.maps.services.Geocoder()
   const options = {
     center: new kakao.maps.LatLng(location.lat, location.lng),
     level: 5,
   }
-  function searchAddrFromCoords(coords, callback) {
-    // 좌표로 행정동 주소 정보를 요청합니다
-    geocoder.coord2RegionCode(coords.getLng(), coords.getLat(), callback)
-  }
-  function searchDetailAddrFromCoords(coords, callback) {
-    // 좌표로 법정동 상세 주소 정보를 요청합니다
+  const searchDetailAddrFromCoords = (coords, callback) => {
     geocoder.coord2Address(coords.getLng(), coords.getLat(), callback)
   }
-
-  // function displayCenterInfo(result, status) {
-  //   if (status === kakao.maps.services.Status.OK) {
-  //     var infoDiv = document.getElementById("centerAddr")
-
-  //     for (var i = 0; i < result.length; i++) {
-  //       // 행정동의 region_type 값은 'H' 이므로
-  //       if (result[i].region_type === "H") {
-  //         infoDiv.innerHTML = result[i].address_name
-  //         break
-  //       }
-  //     }
-  //   }
-  // }
 
   const showDetailAddrFromCoords = (result, event) => {
     let coords = new kakao.maps.LatLng(result[0].y, result[0].x)
@@ -59,10 +51,10 @@ const Map = () => {
                   </div>`
     infowindow.setContent(content)
     infowindow.open(map.current, marker)
-    const test = document.getElementById("infowindow-button")
-    test.addEventListener("click", () => {
-      dispatch(selectedAddress(result[0].address.address_name))
-      // close modal
+    const infowindowButton = document.getElementById("infowindow-button")
+    infowindowButton?.addEventListener("click", () => {
+      dispatch(setUserInfo({ address: result[0].address.address_name }))
+      setIsMapOpen(false)
     })
     map.current.setCenter(coords)
   }
@@ -82,14 +74,12 @@ const Map = () => {
     }
   }
   useEffect(() => {
-    // 이거 이전것들은 지울 수 있나?
-    geocoder.addressSearch(addresss, (res, status) => {
+    geocoder.addressSearch(selectedAddress, (res, status) => {
       if (status === kakao.maps.services.Status.OK) {
         showDetailAddrFromCoords(res, null)
       }
     })
-    // console.log("addresss", addresss)
-  }, [addresss])
+  }, [selectedAddress])
   useEffect(() => {
     request()
   }, [address])
@@ -102,18 +92,16 @@ const Map = () => {
     })
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
-        console.log("position", position)
         let lat = position.coords.latitude
         let lng = position.coords.longitude
         let locPosition = new kakao.maps.LatLng(lat, lng)
         marker.setPosition(locPosition)
         marker.setMap(map.current)
-        // infowindow.open(map.current, marker)
+        infowindow.setContent(`<div class='bAddr'>지금 여기 계신가요?</div>`)
+        infowindow.open(map.current, marker)
         map.current.setCenter(locPosition)
       })
     }
-    // searchAddrFromCoords(map.current.getCenter(), displayCenterInfo)
-    // searchAddrFromCoords(map.getCenter(), displayCenterInfo)
     kakao.maps.event.addListener(map.current, "click", function (mouseEvent) {
       searchDetailAddrFromCoords(mouseEvent.latLng, function (result, status) {
         if (status === kakao.maps.services.Status.OK) {
@@ -121,9 +109,6 @@ const Map = () => {
         }
       })
     })
-    // kakao.maps.event.addListener(map.current, "idle", function () {
-    //   searchAddrFromCoords(map.current.getCenter(), displayCenterInfo)
-    // })
   }, [])
 
   return (
@@ -133,7 +118,7 @@ const Map = () => {
         <ul>
           {addressList.map((address, index) => (
             <li
-              onClick={() => dispatch(selectedAddress(address.address_name))}
+              onClick={() => setSelectedAddress(address.address.address_name)}
               key={index}
             >
               {address.address.address_name}
