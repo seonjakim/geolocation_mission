@@ -18,7 +18,6 @@ const infowindow = new window.kakao.maps.InfoWindow({ zindex: 1 })
 const Map = ({ setIsMapOpen }: MapProps) => {
   const { addressList } = useSelector((state: RootState) => state.maps)
   const dispatch = useDispatch()
-  const [location, setLocation] = useState({ lat: 0, lng: 0 })
   const [address, setAddress] = useState("")
   const [selectedAddress, setSelectedAddress] = useState("")
   const { kakao } = window
@@ -27,7 +26,7 @@ const Map = ({ setIsMapOpen }: MapProps) => {
 
   const geocoder = new kakao.maps.services.Geocoder()
   const options = {
-    center: new kakao.maps.LatLng(location.lat, location.lng),
+    center: new kakao.maps.LatLng(33.450701, 126.570667),
     level: 5,
   }
   const searchDetailAddrFromCoords = (coords, callback) => {
